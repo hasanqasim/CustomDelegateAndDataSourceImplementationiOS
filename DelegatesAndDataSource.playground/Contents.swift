@@ -1,36 +1,52 @@
 import UIKit
 import PlaygroundSupport
 
+//MARK: protocols
+
 protocol ColorChangeDelegate {
     func colorChanged(index: Int)
 }
 
-// model
+protocol ColorChangeDataSource {
+    func numberOfColors() -> Int
+    func colorName(for index: Int) -> String
+    func colorObject(for index: Int) -> UIColor
+}
+
+//MARK: Model
+
 class Color {
     var colorIndex = 0
-    let colorName = ["red", "green", "blue", "purple"]
-    private let color = [UIColor.red, UIColor.green, UIColor.blue, UIColor.purple]
+    var delegate: ColorChangeDataSource?
     
     func name(_ index: Int) -> String {
-        return colorName[index%colorName.count]
+        //return colorName[index%colorName.count]
+        colorIndex = index%delegate!.numberOfColors()
+        return delegate!.colorName(for: colorIndex)
     }
     
     func color(_ index: Int) -> UIColor {
-        return color[index%color.count]
+        //return color[index%color.count]
+        colorIndex = index%delegate!.numberOfColors()
+        return delegate!.colorObject(for: colorIndex)
     }
 }
 
-// above an example of encapsulation..
+//MARK: View+Controllers
 
-// destination view controller
-class DestinationViewController: UIViewController {
+class DestinationViewController: UIViewController, ColorChangeDataSource {
+    
     let colors = Color()
     var currentColor = 0
+    let colorName = ["red", "green", "blue", "purple"]
+    private let color = [UIColor.red, UIColor.green, UIColor.blue, UIColor.purple]
+
     var delegate: ColorChangeDelegate?
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        let segmentedControl = UISegmentedControl(items: colors.colorName)
+        colors.delegate = self
+        let segmentedControl = UISegmentedControl(items: colorName)
         segmentedControl.frame = CGRect(x: 0, y: 0, width: 300, height: 100)
         view.backgroundColor = colors.color(currentColor)
         segmentedControl.addTarget(self, action: #selector(changeColor), for: .valueChanged)
@@ -45,17 +61,34 @@ class DestinationViewController: UIViewController {
         dismiss(animated: true, completion: nil)
         
     }
+    
+    //MARK: data source
+    func numberOfColors() -> Int {
+        return colorName.count
+    }
+    
+    func colorName(for index: Int) -> String {
+        return colorName[index]
+    }
+    
+    func colorObject(for index: Int) -> UIColor {
+        return color[index]
+    }
+
 }
 
-// ViewController
-class ViewController: UIViewController, ColorChangeDelegate {
+class ViewController: UIViewController, ColorChangeDelegate, ColorChangeDataSource {
     let colors = Color()
+    let colorName = ["red", "green", "blue", "purple"]
+    private let color = [UIColor.red, UIColor.green, UIColor.blue, UIColor.purple]
+
+    
     let button = UIButton(frame: CGRect(x: 0, y: 0, width: 200, height: 400))
     var count = 0
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+        colors.delegate = self
         view.backgroundColor = #colorLiteral(red: 1, green: 0.5763723254, blue: 0, alpha: 1)
         button.setTitle("Choose Color", for: .normal)
         button.backgroundColor = UIColor.darkGray
@@ -79,9 +112,19 @@ class ViewController: UIViewController, ColorChangeDelegate {
         count = index
         view.backgroundColor = colors.color(count)
     }
+    
+    //MARK: data source
+    func numberOfColors() -> Int {
+        return colorName.count
+    }
+    
+    func colorName(for index: Int) -> String {
+        return colorName[index]
+    }
+    
+    func colorObject(for index: Int) -> UIColor {
+        return color[index]
+    }
 }
-
-// View
-
 
 PlaygroundPage.current.liveView = ViewController()
